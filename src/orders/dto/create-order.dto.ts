@@ -1,23 +1,11 @@
-import { OrderStatus } from '@prisma/client';
-import { IsBoolean, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
-import { OrderStatusList } from '../enum/order.enum';
+import { Type } from 'class-transformer';
+import { ArrayMinSize, IsArray, ValidateNested } from 'class-validator';
+import { OrderItemDto } from './order-item.dto';
 
 export class CreateOrderDto {
-  @IsNumber()
-  @Min(1)
-  totalAmount: number;
-
-  @IsNumber()
-  @Min(1)
-  totalItems: number;
-
-  @IsEnum(OrderStatusList, {
-    message: `Status must be one of the following: ${OrderStatusList.join(', ')}`,
-  })
-  @IsOptional()
-  status: OrderStatus = OrderStatus.PENDING;
-
-  @IsBoolean()
-  @IsOptional()
-  paid: boolean = false;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  items: OrderItemDto[];
 }

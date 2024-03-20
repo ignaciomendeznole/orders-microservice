@@ -109,6 +109,13 @@ export class OrdersService extends PrismaClient implements OnModuleInit {
         },
         skip: (currentPage - 1) * perPage,
         take: perPage,
+        include: {
+          OrderReceipt: {
+            select: {
+              receiptUrl: true,
+            },
+          },
+        },
       }),
       meta: {
         totalCount,

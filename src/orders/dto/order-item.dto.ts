@@ -11,9 +11,4 @@ export class OrderItemDto {
   @IsPositive()
   @Type(() => Number)
   quantity: number;
-
-  @IsNumber()
-  @IsPositive()
-  @Type(() => Number)
-  price: number;
 }

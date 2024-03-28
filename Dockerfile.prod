@@ -1,0 +1,61 @@
+# Dependencies
+
+FROM node:21-alpine3.19 as deps
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY yarn.lock ./
+
+RUN yarn install
+
+# Builder - Build the app
+FROM node:21-alpine3.19 as builder
+
+# Receive the DATABASE_URL as a build argument and set it as an environment variable in the builder stage for the service to use
+ARG ORDERS_SERVICE_DATABASE_URL
+ENV DATABASE_URL=$ORDERS_SERVICE_DATABASE_URL
+
+# Echo the DATABASE_URL to the console to confirm that it was set correctly
+RUN echo $DATABASE_URL
+
+WORKDIR /usr/src/app
+
+# Copy the node_modules from the deps stage into the current working directory
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+
+# Copy the source code except the files defined in .dockerignore
+COPY . .
+
+# Run prisma migrate deploy before building the app to deploy the migrations
+RUN npx prisma migrate deploy
+
+# Run prisma generate before building the app to generate the Prisma client
+RUN npx prisma generate
+
+RUN yarn build
+
+# Clean up the node_modules and install only the production dependencies (without devDependencies)
+RUN yarn install --frozen-lockfile --production && yarn cache clean --force
+
+
+# Create final image
+FROM node:21-alpine3.19 as prod
+
+WORKDIR /usr/src/app
+
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
+# Copy the dist folder from the builder stage into the current working directory
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Copy Prisma directory
+COPY --from=builder /usr/src/app/prisma ./prisma
+
+ENV NODE_ENV=production
+
+USER node
+
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]

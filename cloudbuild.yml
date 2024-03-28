@@ -14,6 +14,7 @@ steps:
         'southamerica-west1-docker.pkg.dev/store-microservices-418622/image-registry/orders-microservice-production',
       ]
 
+# Add secret in the build configuration
 availableSecrets:
   secretManager:
     - versionName: projects/1069072716561/secrets/orders-database-url/versions/1
